@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Multi-Lingual Chat Bot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <link href="http://netdna.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet">
+    <!-- <link rel="stylesheet" href="nanoscroller.css"> -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/annyang/2.6.0/annyang.min.js"></script>
+    <script src='https://code.responsivevoice.org/responsivevoice.js'></script>
+    <script>
+var resp_lang = "";
+var voice = "";
+var a = 1;
+
+$(document).ready(function(){
+resp_lang = "en"; 
+    
+$('#input_txt').keydown(function(event) {
+    // enter has keyCode = 13, change it if you want to use another button
+    if (event.keyCode == 13) {
+    send(document.getElementById('input_txt').value);
+    $("#input_txt").val('');
+    }
+ });    
+    
+if (annyang) {
+  var commands = {
+    'hello': function() { console.log('Hello world!');send("hello")},
+    'jessie *tag': function(tag) { console.log(tag);send(tag) }
+  };
+  annyang.addCommands(commands);
+  annyang.setLanguage('en-IN');
+  annyang.start();
+  annyang.addCallback('soundstart', function() {
+  $('#status').html("<i class=\"fa fa-microphone fa-2x fa-fw text-danger\"></i><span class=\"sr-only\">Loading...</span>");
+  console.log('sound detected');
+});
+annyang.addCallback('result', function() {
+  $('#status').html("<i class=\"fa fa-microphone fa-2x fa-fw\"></i><span class=\"sr-only\">Loading...</span>");
+  console.log('sound stopped');
+  annyang.abort();  
+  a =1;
+});
+
+  $('#status').click(function() {
+    if (a == 0 ) {
+      $('#status').html("<i class=\"fa fa-microphone fa-2x fa-fw\"></i><span class=\"sr-only\">Loading...</span>");
+      console.log("stop");
+      annyang.abort();  
+      a =1;
+    }
+    else{
+     $('#status').html("<i class=\"fa fa-microphone fa-2x fa-fw text-danger\"></i><span class=\"sr-only\">Loading...</span>");
+      console.log("start");
+      annyang.start();  
+      a =0;   
+    }
+      
+  });
+
+
+  annyang.addCallback('resultMatch', function(userSaid, commandText, phrases) {
+  console.log(userSaid); // sample output: 'hello'
+  console.log(commandText); // sample output: 'hello (there)'
+  console.log(phrases); // sample output: ['hello', 'halo', 'yellow', 'polo', 'hello kitty']
+});
+}
+});
+
+// { autoRestart: true, continuous: false }
+
+  function send(text) {
+  			var accessToken = "32cb35d505354a489b950e93041e05bf";
+			var baseUrl = "https://api.api.ai/v1/";
+            var d = new Date();
+            var n = d.toLocaleTimeString();
+            $('#status').html("<i class=\"fa fa-spinner fa-pulse fa-2x fa-fw\"></i><span class=\"sr-only\">Loading...</span>");
+            $.when(
+                $.ajax({
+
+			                method: "GET",
+			                contentType: "text/plain",
+			                headers: {
+			                    'Content-Type': 'text/plain; charset=utf-8;'
+			                },
+			                url: "http://freebot.herokuapp.com/en/"+String(text),
+			                success:function(data) {
+								console.log(data + " converted text");
+			                	var requestTXT='<li class="mar-btm"><div class="media-right"><img src="http://bootdey.com/img/Content/avatar/avatar2.png" class="img-circle img-sm" alt="Profile Picture"></div><div class="media-body pad-hor speech-right"><div class="speech"><a href="#" class="media-heading">Me</a><p>'+text+'</p><p class="speech-time"><i class="fa fa-clock-o fa-fw"></i> '+n+'</p></div></div></li>';
+					            $("ul").append(requestTXT);
+					            var objDiv = document.getElementById("for_scroll");
+					         	objDiv.scrollTop = objDiv.scrollHeight;
+			                },
+			                error: function (err) {
+			                    console.log('error' + err);
+			                }
+            			})
+                ).then(function(results){  
+                						$.when(
+                								 $.ajax({
+								                type: "POST",
+								                url: baseUrl + "query?v=20150910",
+								                contentType: "application/json; charset=utf-8",
+								                dataType: "json",
+								                headers: {
+								                    "Authorization": "Bearer " + accessToken
+								                },
+								                data: JSON.stringify({ query: results, lang: "en", sessionId: "Scifiswapnil" }),
+								                error: function() {
+								                   console.log("Internal Server Error");
+								                }
+								            	})
+                						).then(function(results_2) {
+                									console.log(String(results_2.result.fulfillment.speech));
+	                								$.ajax({
+											                method: "GET",
+											                contentType: "text/plain",
+											                headers: {
+											                    'Content-Type': 'text/plain; charset=utf-8;'
+											                },
+											                url: "http://freebot.herokuapp.com/"+resp_lang+"/\""+results_2.result.fulfillment.speech+"\"",
+											                success:function (data) {
+																	console.log(data+ " after conversion");
+											              			var responeTXT='<li class="mar-btm"><div class="media-left"><img src="http://bootdey.com/img/Content/avatar/avatar1.png" class="img-circle img-sm" alt="Profile Picture"></div><div class="media-body pad-hor"><div class="speech"><a href="#" class="media-heading">Jessie</a><p>'+data+'</p><p class="speech-time"><i class="fa fa-clock-o fa-fw"></i>'+n+'</p></div></div></li>';
+												                    $("ul").append(responeTXT);
+												                    var objDiv = document.getElementById("for_scroll");
+												                    objDiv.scrollTop = objDiv.scrollHeight;
+												                    if (resp_lang == "hi") {
+												                    	voice = "Hindi Female";
+												                    }else if (resp_lang == "en") {
+												                    	voice = "US English Female";
+												                    }else if (resp_lang == "fr") {
+												                    	voice = "French Female";
+												                    }else if (resp_lang == "ru") {
+												                    	voice = "Russian Female";
+												                    }else if (resp_lang == "ja") {
+												                    	voice = "Japanese Female";
+												                    }else if (resp_lang == "es") {
+												                    	voice = "Spanish Female";
+												                    }
+												                    responsiveVoice.setDefaultVoice(voice);
+												                    responsiveVoice.speak(data);
+                                                                    $('#status').html("<i class=\"fa fa-microphone fa-2x fa-fw\"></i><span class=\"sr-only\">Loading...</span>");
+											                },
+											                error: function (err) {
+											                    console.log('error' + err);
+											                }
+								            			})
+                						});
+			            				});
+        		}
+
+                function changeLang(val)
+                {
+                    console.log(val);
+                    if(val == "English")
+                    {
+                    annyang.setLanguage('en-IN'); 
+                    resp_lang = "en";   
+                    console.log("English it is");
+                    }
+                    else if (val == "Hindi")
+                    {
+                    annyang.setLanguage('en-IN'); 
+                    resp_lang = "hi";   
+                    console.log("Hindi it is");
+                    }
+                    else if(val == "Spanish")
+                    {
+                    annyang.setLanguage('es-ES'); 
+                    resp_lang = "es"; 
+                    console.log("Spanish it is");  
+                    }
+                    else if (val == "French")
+                    {
+                    annyang.setLanguage('fr-FR'); 
+                    resp_lang = "fr";   
+                    console.log("French it is");
+                    }
+                    else if(val == "Russian")
+                    {
+                    annyang.setLanguage('ru-RU'); 
+                    resp_lang = "ru"; 
+                    console.log("Russian it is");  
+                    }
+                    else if (val == "Japanese")
+                    {
+                    annyang.setLanguage('ja-JA'); 
+                    resp_lang = "ja";   
+                    console.log("Japanese it is");
+                    }                    
+                }
+
+</script>
+
+    <style type="text/css">
+    	body{
+    margin-top:20px;
+    background:#ebeef0;
+    background-image:url("http://wallpapercave.com/wp/Zkc7mGk.jpg");
+}
+.panel {
+    box-shadow: 0 2px 0 rgba(0,0,0,0.075);
+    border-radius: 0;
+    border: 0;
+    margin-bottom: 24px;
+}
+.panel .panel-heading, .panel>:first-child {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+.panel-heading {
+    position: relative;
+    height: 50px;
+    padding: 0;
+    border-bottom:1px solid #eee;
+}
+.panel-control {
+    height: 100%;
+    position: relative;
+    float: right;
+    padding: 0 15px;
+}
+.panel-title {
+    font-weight: normal;
+    padding: 0 20px 0 20px;
+    font-size: 1.416em;
+    line-height: 50px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.panel-control>.btn:last-child, .panel-control>.btn-group:last-child>.btn:first-child {
+    border-bottom-right-radius: 0;
+}
+.panel-control .btn, .panel-control .dropdown-toggle.btn {
+    border: 0;
+}
+.nano {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+.nano>.nano-content {
+    position: absolute;
+    overflow: scroll;
+    overflow-x: hidden;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+}
+.pad-all {
+    padding: 15px;
+}
+.mar-btm {
+    margin-bottom: 15px;
+}
+.media-block .media-left {
+    display: block;
+    float: left;
+}
+.img-sm {
+    width: 46px;
+    height: 46px;
+}
+.media-block .media-body {
+    display: block;
+    overflow: hidden;
+    width: auto;
+}
+.pad-hor {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+.speech {
+    position: relative;
+    background: #b7dcfe;
+    color: #317787;
+    display: inline-block;
+    border-radius: 0;
+    padding: 12px 20px;
+}
+.speech:before {
+    content: "";
+    display: block;
+    position: absolute;
+    width: 0;
+    height: 0;
+    left: 0;
+    top: 0;
+    border-top: 7px solid transparent;
+    border-bottom: 7px solid transparent;
+    border-right: 7px solid #b7dcfe;
+    margin: 15px 0 0 -6px;
+}
+.speech-right>.speech:before {
+    left: auto;
+    right: 0;
+    border-top: 7px solid transparent;
+    border-bottom: 7px solid transparent;
+    border-left: 7px solid #ffdc91;
+    border-right: 0;
+    margin: 15px -6px 0 0;
+}
+.speech .media-heading {
+    font-size: 1.2em;
+    color: #317787;
+    display: block;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    font-weight: 300;
+}
+.speech-time {
+    margin-top: 20px;
+    margin-bottom: 0;
+    font-size: .8em;
+    font-weight: 300;
+}
+.media-block .media-right {
+    float: right;
+}
+.speech-right {
+    text-align: right;
+}
+.pad-hor {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+.speech-right>.speech {
+    background: #ffda87;
+    color: #a07617;
+    text-align: right;
+}
+.speech-right>.speech .media-heading {
+    color: #a07617;
+}
+.btn-primary, .btn-primary:focus, .btn-hover-primary:hover, .btn-hover-primary:active, .btn-hover-primary.active, .btn.btn-active-primary:active, .btn.btn-active-primary.active, .dropdown.open>.btn.btn-active-primary, .btn-group.open .dropdown-toggle.btn.btn-active-primary {
+    background-color: #579ddb;
+    border-color: #5fa2dd;
+    color: #fff !important;
+}
+.btn {
+    cursor: pointer;
+    /* background-color: transparent; */
+    color: inherit;
+    padding: 6px 12px;
+    border-radius: 0;
+    border: 1px solid 0;
+    font-size: 11px;
+    line-height: 1.42857;
+    vertical-align: middle;
+    -webkit-transition: all .25s;
+    transition: all .25s;
+}
+.form-control {
+    font-size: 11px;
+    height: 100%;
+    border-radius: 0;
+    box-shadow: none;
+    border: 1px solid #e9e9e9;
+    transition-duration: .5s;
+}
+.nano>.nano-pane {
+    background-color: rgba(0,0,0,0.1);
+    position: absolute;
+    width: 5px;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    opacity: 0;
+    -webkit-transition: all .7s;
+    transition: all .7s;
+}
+    </style>
+</head>
+
+<body>
+<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
+<div class="container">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="panel">
+            <div class="panel-heading">
+                <div class="row">
+                    <div class="col-xs-6 col-md-6 col-sm-6">
+                        <h3 class="panel-title">Chat Bot</h3>
+                    </div>
+                    <div class="col-xs-2 col-md-2 col-sm-2">
+                    </div>
+                    <div class="panel-heading col-xs-4 col-md-4 col-sm-4">
+                        <select class="form-control" onChange="changeLang(this.value);" style="width:90%">
+                        <option>English</option>
+                        <option>Hindi</option>
+                        <option>Spanish</option>
+                        <option>Russian</option>
+                        <option>French</option>
+                        <option>Japanese</option>
+                    </select>
+                    </div>
+                </div>
+			 
+            </div>
+                     
+                
+                
+            <div id="demo-chat-body" class="collapse in">
+                <div class="nano has-scrollbar" style="height:500px;">
+                    <div class="nano-content pad-all" tabindex="0" style="right: -17px;overflow: scroll;" id="for_scroll">
+                        <ul class="list-unstyled media-block chat" >
+
+                        </ul>
+                    </div>
+                <div class="nano-pane"><div class="nano-slider" style="height: 141px; transform: translate(0px, 0px);"></div>
+            </div>
+            </div>
+            <div class="panel-footer">
+            <div class="row">
+            <div id="status" class="col-xs-1 col-md-1 col-sm-1" >
+            <i class="fa fa-microphone fa-2x fa-fw"></i>
+            <span class="sr-only">Loading...</span>
+            </div>
+           
+            <!-- <i class="col-xs-1 col-md-1 col-sm-1 fa fa-microphone" aria-hidden="true"></i> -->
+            <!-- <div class="col-xs-1 col-md-1 col-sm-1" >
+                <i class="fa fa-spinner fa-pulse fa-2x fa-fw text-danger"></i>
+                <span class="sr-only">Loading...</span>
+            </div> -->
+           <!--  <div class="col-xs-1 col-md-1 col-sm-1" >
+                <i class="fa fa-microphone fa-2x fa-fw" aria-hidden="true"></i>
+            </div>   --> 
+
+            <div class="col-xs-8 col-md-8 col-sm-8"><input class="form-control chat-input" id="input_txt" type="text" placeholder="Type your text here."></div>
+            <div class="col-xs-3 col-md-3 col-sm-3"><button class="btn btn-block btn-primary" type="submit" onClick="var tempval = document.getElementById('input_txt').value;send(tempval); document.getElementById('input_txt').value='';">Send</button></div>
+            </div>
+            </div>
+            
+        </div>
+    </div>
+	</div>
+	</div>
+
+
+<script src="http://netdna.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+<script type="text/javascript">
+    
+</script>
+</body>
+</html>
